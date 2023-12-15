@@ -26,6 +26,7 @@ bool writeLines(QFile *file, QList<Task> tasks)
     for (auto task : tasks) {
         out << task << "\n";
     }
+    out.flush();
 
     return true;
 }

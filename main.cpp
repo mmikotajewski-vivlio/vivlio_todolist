@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     TaskPriority priority = TaskPriority::Unknown;
     ProgramAction action = ProgramAction::Display;
     QString taskToAdd{};
-    QString taskId{};
+    uint32_t taskId{};
     int currentArgIndex = 0;
     uint32_t taskIdGenerator = 0;
     while (currentArgIndex != argc) {
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
             Q_ASSERT_X(currentArgIndex == argc - 1, Q_FUNC_INFO, "Bad parameter count");
         } else if (contains<QString, 2>(Args::markAsDoneArgs, currentArg)) {
             Q_ASSERT_X(currentArgIndex != argc - 1, Q_FUNC_INFO, "Bad parameter count");
-            taskId = argv[++currentArgIndex];
+            taskId = QString{argv[++currentArgIndex]}.toUInt();
             action = ProgramAction::MarkAsDone;
             Q_ASSERT_X(currentArgIndex == argc - 1, Q_FUNC_INFO, "Bad parameter count");
 
@@ -131,10 +131,11 @@ int main(int argc, char *argv[])
     }
     case ProgramAction::Purge: {
         file = readFile(filePath);
+        file->open(QFile::ReadOnly);
         lines = readLines(file);
+        file->close();
         QList<Task> tasks;
 
-        file = new QFile{filePath};
         file->open(QFile::WriteOnly | QFile::Truncate);
 
         for (auto line : lines) {
@@ -163,11 +164,20 @@ int main(int argc, char *argv[])
     }
     case ProgramAction::MarkAsDone: {
         file = readFile(filePath);
+        file->open(QFile::ReadOnly);
         lines = readLines(file);
+        file->close();
         QList<Task> tasks;
         for (auto line : lines) {
             tasks.append(Task{line, taskIdGenerator++});
         }
+        for (auto &task : tasks) {
+            if (task.id() == taskId) {
+                task.setPriority(TaskPriority::Done);
+            }
+        }
+        file->open(QFile::WriteOnly | QFile::Truncate);
+        writeLines(file, tasks);
         break;
     }
     }
