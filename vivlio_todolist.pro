@@ -11,6 +11,7 @@ SOURCES += \
         main.cpp \
         readFile.cpp \
         task.cpp \
+        taskManagement.cpp \
         writeFile.cpp
 
 # Default rules for deployment.
@@ -23,4 +24,5 @@ HEADERS += \
     TaskPriority.h \
     readFile.h \
     task.h \
+    taskManagement.h \
     writeFile.h

@@ -6,6 +6,8 @@ enum class ProgramAction {
     Add,
     MarkAsDone,
     Purge,
+    StartTask,
+    StopTask,
 };
 
 #endif // PROGRAMACTION_H

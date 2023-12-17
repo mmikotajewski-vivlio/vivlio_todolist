@@ -15,6 +15,7 @@ public:
     TaskPriority priority() const { return m_priority; }
     void setPriority(const TaskPriority &priority) { m_priority = priority; }
     uint32_t id() const { return m_id; }
+    QString description() const { return m_description; }
 
     friend std::ostream &operator<<(std::ostream &stream, const Task &task);
     friend QTextStream &operator<<(QTextStream &stream, const Task &task);
