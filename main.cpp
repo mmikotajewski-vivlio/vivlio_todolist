@@ -8,6 +8,7 @@
 #include "TaskPriority.h"
 #include "readFile.h"
 #include "task.h"
+#include "taskManagement.h"
 #include "writeFile.h"
 
 namespace Args {
@@ -17,6 +18,8 @@ std::array<QString, 2> addUrgentArgs{"--add-urgent", "-u"};
 std::array<QString, 2> addNotSoUrgentArgs{"--add-not-so-urgent", "-n"};
 std::array<QString, 2> markAsDoneArgs{"--mark-as-done", "-m"};
 std::array<QString, 2> purgeArgs{"--purge", "-p"};
+std::array<QString, 2> startTaskArgs{"--start-task", "-s"};
+std::array<QString, 2> stopTaskArgs{"--stop-current-task", "-S"};
 
 } // namespace Args
 
@@ -78,7 +81,12 @@ int main(int argc, char *argv[])
                          "urgent item to the todo list\n"
                       << "\t --mark-as-done / -m <Task ID> :\t\t Mark the task whose ID is given "
                          "in parameter as done\n"
-                      << "\t --purge / -p :\t\t Removes all tasks marked as done\n\n"
+                      << "\t --purge / -p :\t\t Removes all tasks marked as done\n"
+                      << "\t --start-task / -s <Task ID>:\t\t Starts task whose ID is given in "
+                         "parameter\n"
+                      << "\t --stop-current-task / -S:\t\t Stops task whose ID is given in "
+                         "parameter and  displays the time you took to do it. Switch it to Done "
+                         "state.\n\n"
                       << "\t\t Note that all the options above are mutually exclusive.\n"
                          "\t\t If no option is provided, just displays the list of items in the "
                          "TODO list with an ID that can be used to mark tasks as done with the "
@@ -114,23 +122,31 @@ int main(int argc, char *argv[])
         } else if (contains<QString, 2>(Args::purgeArgs, currentArg)) {
             Q_ASSERT_X(currentArgIndex != argc, Q_FUNC_INFO, "Bad parameter count");
             action = ProgramAction::Purge;
+        } else if (contains<QString, 2>(Args::startTaskArgs, currentArg)) {
+            Q_ASSERT_X(currentArgIndex != argc, Q_FUNC_INFO, "Bad parameter count");
+            taskId = QString{argv[++currentArgIndex]}.toUInt();
+            action = ProgramAction::StartTask;
+            Q_ASSERT_X(currentArgIndex == argc - 1, Q_FUNC_INFO, "Bad parameter count");
+        } else if (contains<QString, 2>(Args::stopTaskArgs, currentArg)) {
+            Q_ASSERT_X(currentArgIndex != argc, Q_FUNC_INFO, "Bad parameter count");
+            action = ProgramAction::StopTask;
         }
     }
 
-    QString filePath = "/tmp/toto";
+    QString dataFilePath = "/tmp/toto";
     QFile *file = nullptr;
     QStringList lines{};
     switch (action) {
     case ProgramAction::Add: {
         Task task{priority, taskToAdd};
-        file = new QFile{filePath};
+        file = new QFile{dataFilePath};
         file->open(QFile::Append | QFile::WriteOnly);
         appendTask(file, task);
         file->flush();
         break;
     }
     case ProgramAction::Purge: {
-        file = readFile(filePath);
+        file = readFile(dataFilePath);
         file->open(QFile::ReadOnly);
         lines = readLines(file);
         file->close();
@@ -150,7 +166,7 @@ int main(int argc, char *argv[])
         break;
     }
     case ProgramAction::Display: {
-        file = readFile(filePath);
+        file = readFile(dataFilePath);
         file->open(QFile::ReadOnly);
         auto lines = readLines(file);
         QList<Task> tasks;
@@ -163,7 +179,7 @@ int main(int argc, char *argv[])
         break;
     }
     case ProgramAction::MarkAsDone: {
-        file = readFile(filePath);
+        file = readFile(dataFilePath);
         file->open(QFile::ReadOnly);
         lines = readLines(file);
         file->close();
@@ -180,9 +196,16 @@ int main(int argc, char *argv[])
         writeLines(file, tasks);
         break;
     }
+    case ProgramAction::StartTask: {
+        startTask(taskId);
+        break;
     }
-
-    // Suggestions :
-    // Pour aider pour la suite de l'entretien ça pourrait être une bonne idée de faire tenir chaque élément
-    // de la todo list sur une seule ligne, avec un caractère en début de ligne qui donne son statut
+    case ProgramAction::StopTask: {
+        stopCurrentTask();
+        break;
+    }
+    default: {
+        std::cerr << "Unknown action" << std::endl;
+    }
+    }
 }
